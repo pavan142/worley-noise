@@ -1,0 +1,25 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack",
+    "build-dev": "webpack --config webpack.config.dev.js",
+    "tsbuild": "tsc",
+    "tsbuild-dev": "tsc -p tsconfig.dev.json",
+    "deploy-local": "http-server",
+    "copy-android": "cp -r index.html dist mobileapp/www/",
+    "build-android": "yarn copy-android && cd mobileapp && cordova build && cd ..",
+    "run-android": "cd mobileapp && cordova run android && cd .."
+  },
+  "dependencies": {
+    "cordova": "^9.0.0"
+  },
+  "devDependencies": {
+    "ts-loader": "^7.0.4",
+    "typescript": "^3.9.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
+  }
+}
