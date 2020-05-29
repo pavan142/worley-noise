@@ -1,25 +1,23 @@
 var fromConfig;
-
+import * as configFile from "../configs/21.json";
 // import * as config from "../configs/14.json";
 // fromConfig = true;
 fromConfig = false;
-import { copyStringToClipboard, hexToRgb } from "./utils";
+import { hexToRgb } from "./utils";
 import { coords, BoxConfig } from "./types";
 import { Box } from "./box";
 import { config } from "./config";
 import { canvas, ctx } from "./globals";
-canvas.width = 800;
-canvas.height = 600;
-canvas.style.width = "100vw";
-canvas.style.height = "100vh";
-// var county = Math.floor(canvas.height / canvas.width) * countx;
-// textureTone = "#693f3a";
-config.textureTone = "#a1665e"; // most used setting
-// textureTone = "#8E4B32";
-// textureTone = "#444444"; // black and white, greyish
-// textureTone = "#ecbcb4";
-// textureTone = "#80afb5";
-function RenderWorleyNoise(inputColor: string = "#ffcdb2") {
+import { HumanSkinTones } from "./colors";
+import { 
+  LoadConfigFromFile,
+  defaultType1BoxRatio,
+  defaultType2BoxRatio, 
+  randomizeDelay,
+  NearestNeighborDepth
+} from "./constants";
+
+function RenderWorleyNoise(inputColor: string = HumanSkinTones.blackandwhite) {
   let rgb = hexToRgb(inputColor);
   var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   var data = imageData.data;
@@ -28,12 +26,12 @@ function RenderWorleyNoise(inputColor: string = "#ffcdb2") {
     let dist = getNearestDistance(point, config.boxes);
     let opacity = (dist / (config.max_d));
     opacity = 1 - opacity;
-    opacity = Math.pow(opacity, 1.4);
-    // if (point.y < h / 2) {
-    //   if (opacity > 0.98)
-    //     opacity = 1 - opacity * 0.4
-    //   else if (opacity > 0.93)
-    //     opacity = 1 - opacity * 0.2
+    opacity = Math.pow(opacity, 1.7);
+    // if (point.y < (config.h / 2)) {
+      // if (opacity > 0.98)
+      //   opacity = 1 - opacity * 0.4
+      // else if (opacity > 0.93)
+      //   opacity = 1 - opacity * 0.2
     // }
 
     data[i + 0] = rgb.r * opacity;
@@ -57,8 +55,10 @@ function getNearestDistance(point: coords, boxes: Array<Array<Box>>) {
   let data = getCurrentBox(point, boxes);
   let box = data.box
   let bounding_boxes = new Array<Box>();
-  for (let shiftx = -1; shiftx < 2; shiftx++) {
-    for (let shifty = -1; shifty < 2; shifty++) {
+  let start = -NearestNeighborDepth;
+  let end = +NearestNeighborDepth;
+  for (let shiftx = start; shiftx <= end; shiftx++) {
+    for (let shifty = start; shifty <= end; shifty++) {
       let i = data.i + shiftx;
       let j = data.j + shifty;
       if (i > -1 && i < config.countx && j > -1 && j < config.county)
@@ -76,6 +76,8 @@ function getNearestDistance(point: coords, boxes: Array<Array<Box>>) {
 
 function get2dCoords(i) {
   i = Math.floor(i / 4);
+  // y flows down
+  // x flows right
   let y = Math.floor(i / config.w);
   let x = Math.floor(i % config.w);
   return {
@@ -109,6 +111,19 @@ function renderPoints(boxes: Array<any>) {
   }
 }
 
+function linearTo2d(i, rows, cols) {
+  return {
+    x: Math.floor(i % cols),
+    y: Math.floor(i / cols)
+  }
+}
+
+function getBoxLinear(i): Box {
+  let indices = linearTo2d(i, config.countx, config.county);
+  console.log(i, indices);
+  return config.boxes[indices.x][indices.y];
+}
+
 function init() {
   // if (config) {
   //   loadConfig(config);
@@ -117,10 +132,48 @@ function init() {
   clearScreen();
   // renderPoints(boxes);
   config.generateConfig();
-  animate();
+  if (LoadConfigFromFile) {
+    config.updateFromConfig(configFile)
+  }
+
+  const { type1Boxes, type2Boxes } = generateRandomTypeBoxes();
+  animate(type1Boxes, type2Boxes);
   setInterval(() => {
     generateRandom();
-  }, 4000)
+  }, randomizeDelay)
+}
+
+function generateRandomTypeBoxes(): {
+  type1Boxes: Array<Box>,
+  type2Boxes: Array<Box>
+} {
+  let type1Boxes = new Array<Box>();
+  let type2Boxes = new Array<Box>();
+  if (config.county == 2 && config.county == 2) {
+    type1Boxes.push(getBoxLinear(2));
+    type1Boxes.push(getBoxLinear(3));
+    type2Boxes.push(getBoxLinear(0));
+    type2Boxes.push(getBoxLinear(1));
+    return {
+      type1Boxes,
+      type2Boxes
+    }
+  }
+  let totalCount = config.countx * config.county;
+  console.log("randomizing", defaultType1BoxRatio, defaultType2BoxRatio)
+  for (let i = 0; i < totalCount; i++) {
+    if (Math.random() < defaultType1BoxRatio)
+      type1Boxes.push(getBoxLinear(i));
+  }
+  for (let i = 0; i < totalCount; i++) {
+    if (Math.random() < defaultType2BoxRatio)
+      type2Boxes.push(getBoxLinear(i));
+  }
+  console.log("typ1 and typ2 count", type1Boxes.length, type2Boxes.length);
+  return {
+    type1Boxes,
+    type2Boxes
+  }
 }
 
 function clearScreen() {
@@ -135,17 +188,15 @@ function RandomizePoints() {
       box.assignNewRandomPoint();
   renderPoints(config.boxes);
 };
-// good results;
-// textureTone = "#693f3a" // decent results too
 
-function animate() {
+function animate(type1Boxes: Array<Box>, type2Boxes: Array<Box>) {
   clearScreen();
-  config.boxes[0][1].point.animate();
-  config.boxes[1][1].point.animate();
-  config.boxes[0][0].point.animate2();
-  config.boxes[1][0].point.animate2();
+  for (let box of type1Boxes)
+    box.point.animate();
+  for (let box of type2Boxes)
+    box.point.animate2();
   RenderWorleyNoise(config.textureTone);
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animate.bind(this, type1Boxes, type2Boxes));
 }
 
 function generateRandom() {

@@ -31,4 +31,3 @@ export function Dist2d(point1: coords, point2: coords) {
   let dy = point1.y - point2.y;
   return Math.sqrt(dx * dx + dy * dy)
 }
-

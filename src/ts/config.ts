@@ -2,6 +2,7 @@ import { BoxConfig } from "./types";
 import { canvas } from "./globals";
 import { Box } from "./box";
 import { copyStringToClipboard } from "./utils";
+import { defaultCanvasWidth, defaultCanvasHeight, defaultCanvasStyleWidth, defaultCanvasStyleHeight, defaultTextureTone, LoadConfigFromFile, defaultCountx, defaultCounty, defaultAnimationSpeed, PrintConfigData } from "./constants";
 
 class JSONConfiguration {
   width: number;
@@ -40,23 +41,22 @@ class Configuration {
   static _instance: Configuration;
 
   private constructor() {
-    canvas.width = 800;
-    canvas.height = 600;
-    canvas.style.width = "100vw";
-    canvas.style.height = "100vh";
+    canvas.width = defaultCanvasWidth;
+    canvas.height = defaultCanvasHeight;
+    canvas.style.width = defaultCanvasStyleWidth;
+    canvas.style.height = defaultCanvasStyleHeight;
     this.w = canvas.width;
     this.h = canvas.height;
-    this.countx = 2;
-    this.county = 2;
+    this.countx = defaultCountx;
+    this.county = defaultCounty;
     // this.county = Math.floor(canvas.height / canvas.width) * countx;
     this.dx = this.w / this.countx;
     this.dy = this.h / this.county;
     this.max_d = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
-    this.animationSpeed = 1000 / 24;
+    this.animationSpeed = defaultAnimationSpeed;
     this.boxes = new Array<Array<Box>>();
-    this.textureTone;
     // textureTone = "#693f3a";
-    this.textureTone = "#a1665e"; // most used setting
+    this.textureTone = defaultTextureTone; // most used setting
     // textureTone = "#8E4B32";
     // textureTone = "#444444"; // black and white, greyish
     // textureTone = "#ecbcb4";
@@ -102,20 +102,23 @@ class Configuration {
       configBoxes.push(configBoxesArray);
     }
     let output: JSONConfiguration = {
-      width: config.w,
-      height: config.h,
+      width: this.w,
+      height: this.h,
       styleWidth: canvas.style.width,
       styleHeight: canvas.style.height,
-      countx: config.countx,
-      county: config.county,
-      dx: config.dx,
-      dy: config.dy,
-      animationSpeed: config.animationSpeed,
-      textureTone: config.textureTone,
+      countx: this.countx,
+      county: this.county,
+      dx: this.dx,
+      dy: this.dy,
+      animationSpeed: this.animationSpeed,
+      textureTone: this.textureTone,
       boxes: configBoxes
     }
-    copyStringToClipboard(JSON.stringify(config));
-    console.log(JSON.stringify(config));
+
+    if (PrintConfigData) {
+      copyStringToClipboard(JSON.stringify(output));
+      console.log(JSON.stringify(output));
+    }
   }
 }
 

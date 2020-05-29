@@ -13,8 +13,14 @@ export class Box {
   constructor(i, j) {
     this.i = i;
     this.j = j;
+
+    // This assignment makes x flow down and y flow right in the boxes matrix
     this.x = i * config.dx;
     this.y = j * config.dy;
+  
+    // This assignment makes x flow right and y flow down in the boxes matrix
+    // this.x = j * config.dx;
+    // this.y = i * config.dy;
     this.assignNewRandomPoint();
   }
 
