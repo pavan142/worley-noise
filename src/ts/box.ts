@@ -2,6 +2,7 @@ import { Point } from "./point";
 import { BoxConfig } from "./types";
 import { config } from "./config";
 import { ctx } from "./globals";
+import { TwoCrossTwoEyes } from "./constants";
 
 export class Box {
   i: number;
@@ -9,6 +10,7 @@ export class Box {
   x: number;
   y: number;
   point: Point;
+  hasEye: boolean = false;
 
   constructor(i, j) {
     this.i = i;
@@ -18,6 +20,10 @@ export class Box {
     this.x = i * config.dx;
     this.y = j * config.dy;
   
+
+    if (TwoCrossTwoEyes && config.county == 2 && config.county == 2) {
+      this.hasEye = (j == 0)
+    }
     // This assignment makes x flow right and y flow down in the boxes matrix
     // this.x = j * config.dx;
     // this.y = i * config.dy;

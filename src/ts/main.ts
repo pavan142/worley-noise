@@ -1,5 +1,5 @@
 var fromConfig;
-import * as configFile from "../configs/21.json";
+import * as configFile from "../configs/14.json";
 // import * as config from "../configs/14.json";
 // fromConfig = true;
 fromConfig = false;
@@ -9,13 +9,18 @@ import { Box } from "./box";
 import { config } from "./config";
 import { canvas, ctx } from "./globals";
 import { HumanSkinTones } from "./colors";
-import { 
+import {
   LoadConfigFromFile,
   defaultType1BoxRatio,
-  defaultType2BoxRatio, 
+  defaultType2BoxRatio,
   randomizeDelay,
-  NearestNeighborDepth
+  NearestNeighborDepth,
+  DefaultDisplayPoints,
+  ShowWozawskiEye
 } from "./constants";
+
+var displayPoints = DefaultDisplayPoints;
+var showeyes = ShowWozawskiEye;
 
 function RenderWorleyNoise(inputColor: string = HumanSkinTones.blackandwhite) {
   let rgb = hexToRgb(inputColor);
@@ -23,15 +28,19 @@ function RenderWorleyNoise(inputColor: string = HumanSkinTones.blackandwhite) {
   var data = imageData.data;
   for (var i = 0; i < data.length; i = i + 4) {
     let point = get2dCoords(i);
-    let dist = getNearestDistance(point, config.boxes);
+    const {dist, box} = getNearestDistance(point, config.boxes);
     let opacity = (dist / (config.max_d));
     opacity = 1 - opacity;
     opacity = Math.pow(opacity, 1.7);
     // if (point.y < (config.h / 2)) {
-      // if (opacity > 0.98)
-      //   opacity = 1 - opacity * 0.4
-      // else if (opacity > 0.93)
-      //   opacity = 1 - opacity * 0.2
+    if (showeyes || box.hasEye) {
+      if (opacity > 0.97)
+        opacity = 1 - opacity * 0.5
+      else if (opacity > 0.90)
+        opacity = 1 - opacity * 0.3
+      else if (opacity > 0.85)
+        opacity = 1 - opacity * 0.2
+    }
     // }
 
     data[i + 0] = rgb.r * opacity;
@@ -51,7 +60,10 @@ function getCurrentBox(point: coords, boxes) {
   }
 }
 
-function getNearestDistance(point: coords, boxes: Array<Array<Box>>) {
+function getNearestDistance(point: coords, boxes: Array<Array<Box>>): {
+  dist: number,
+  box: Box
+} {
   let data = getCurrentBox(point, boxes);
   let box = data.box
   let bounding_boxes = new Array<Box>();
@@ -66,11 +78,16 @@ function getNearestDistance(point: coords, boxes: Array<Array<Box>>) {
     }
   }
   let min = 2 * config.max_d;
+  let minBox = data.box;
   for (let box of bounding_boxes) {
     let dist = box.point.distanceTo(point);
     min = Math.min(dist, min);
+    minBox = box;
   }
-  return min;
+  return {
+    dist: min,
+    box: box
+  }
   // console.log(point, data.i, data.j, boxPoint.x , boxPoint.y);
 }
 
@@ -120,17 +137,13 @@ function linearTo2d(i, rows, cols) {
 
 function getBoxLinear(i): Box {
   let indices = linearTo2d(i, config.countx, config.county);
-  console.log(i, indices);
+  // console.log(i, indices);
   return config.boxes[indices.x][indices.y];
 }
 
 function init() {
-  // if (config) {
-  //   loadConfig(config);
-  // } else {
   config.boxes = generateBoxes();
   clearScreen();
-  // renderPoints(boxes);
   config.generateConfig();
   if (LoadConfigFromFile) {
     config.updateFromConfig(configFile)
@@ -195,7 +208,10 @@ function animate(type1Boxes: Array<Box>, type2Boxes: Array<Box>) {
     box.point.animate();
   for (let box of type2Boxes)
     box.point.animate2();
-  RenderWorleyNoise(config.textureTone);
+  if (displayPoints)
+    renderPoints(config.boxes);
+  else
+    RenderWorleyNoise(config.textureTone);
   requestAnimationFrame(animate.bind(this, type1Boxes, type2Boxes));
 }
 
@@ -207,12 +223,20 @@ function generateRandom() {
   // renderPoints(boxes);
 }
 
+function toggle() {
+  displayPoints = !displayPoints;
+}
 
+function eyes() {
+  showeyes = !showeyes;
+}
 
 (<any>window).RenderWorleyNoise = RenderWorleyNoise;
 (<any>window).RandomizePoints = RandomizePoints;
 (<any>window).animate = animate;
 (<any>window).generateRandom = generateRandom;
+(<any>window).toggle = toggle;
+(<any>window).eyes = eyes;
 
 // if (fromConfig)
 // init(config)
