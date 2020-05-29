@@ -2,7 +2,23 @@ import { BoxConfig } from "./types";
 import { canvas } from "./globals";
 import { Box } from "./box";
 import { copyStringToClipboard } from "./utils";
-import { defaultCanvasWidth, defaultCanvasHeight, defaultCanvasStyleWidth, defaultCanvasStyleHeight, defaultTextureTone, LoadConfigFromFile, defaultCountx, defaultCounty, defaultAnimationSpeed, PrintConfigData } from "./constants";
+import {
+  defaultCanvasWidth, defaultCanvasHeight, defaultCanvasStyleWidth,
+  defaultCanvasStyleHeight, defaultTextureTone,
+  LoadConfigFromFile, defaultCountx, defaultCounty, defaultAnimationSpeed,
+  PrintConfigData, defaultType1BoxRatio, defaultType2BoxRatio, randomizeDelay,
+  DefaultDisplayPoints,
+  NearestNeighborDepth,
+  ShowWozawskiEye,
+  TopEyes,
+  RandomizeBounce,
+  SynchronizeBounces,
+  BounceX,
+  Animate,
+  GlobalMovement,
+  RandomizeMovment,
+  RandomizeScale,
+} from "./constants";
 
 class JSONConfiguration {
   width: number;
@@ -16,6 +32,23 @@ class JSONConfiguration {
   animationSpeed: number;
   textureTone: string;
   boxes: Array<Array<BoxConfig>>;
+
+  type1BoxRatio: number;
+  type2BoxRatio: number;
+  randomizeDelay: number;
+  NearestNeighborDepth: number;
+
+  PrintConfigData: boolean;
+  displayPoints: boolean;
+  ShowWozawskiEye: boolean;
+  TopEyes: boolean;
+  RandomizeBounce: boolean;
+  SynchronizeBounces: boolean;
+  BounceX: boolean;
+  Animate: boolean;
+  GlobalMovement: boolean;
+  RandomizeMovment: boolean;
+  RandomizeScale: boolean;
 }
 
 class Configuration {
@@ -31,6 +64,23 @@ class Configuration {
   animationSpeed: number;
   textureTone: string;
   boxesConfig: Array<Array<BoxConfig>>;
+
+  type1BoxRatio: number;
+  type2BoxRatio: number;
+  randomizeDelay: number;
+  NearestNeighborDepth: number;
+
+  PrintConfigData: boolean;
+  displayPoints: boolean;
+  ShowWozawskiEye: boolean;
+  TopEyes: boolean;
+  RandomizeBounce: boolean;
+  SynchronizeBounces: boolean;
+  BounceX: boolean;
+  Animate: boolean;
+  GlobalMovement: boolean;
+  RandomizeMovment: boolean;
+  RandomizeScale: boolean;
 
   //NON JSONIFYABLE PROPETIES
   w: number;
@@ -49,18 +99,29 @@ class Configuration {
     this.h = canvas.height;
     this.countx = defaultCountx;
     this.county = defaultCounty;
-    // this.county = Math.floor(canvas.height / canvas.width) * countx;
     this.dx = this.w / this.countx;
     this.dy = this.h / this.county;
     this.max_d = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
     this.animationSpeed = defaultAnimationSpeed;
     this.boxes = new Array<Array<Box>>();
-    // textureTone = "#693f3a";
-    this.textureTone = defaultTextureTone; // most used setting
-    // textureTone = "#8E4B32";
-    // textureTone = "#444444"; // black and white, greyish
-    // textureTone = "#ecbcb4";
-    // textureTone = "#80afb5";
+    this.textureTone = defaultTextureTone;
+
+    this.type1BoxRatio = defaultType1BoxRatio;
+    this.type2BoxRatio = defaultType2BoxRatio;
+
+    this.randomizeDelay = randomizeDelay;
+    this.PrintConfigData = PrintConfigData;
+    this.NearestNeighborDepth = NearestNeighborDepth;
+    this.displayPoints = DefaultDisplayPoints;
+    this.ShowWozawskiEye = ShowWozawskiEye;
+    this.TopEyes = TopEyes;
+    this.RandomizeBounce = RandomizeBounce;
+    this.SynchronizeBounces = SynchronizeBounces;
+    this.BounceX = BounceX;
+    this.Animate = Animate;
+    this.GlobalMovement = GlobalMovement;
+    this.RandomizeMovment = RandomizeMovment;
+    this.RandomizeScale = RandomizeScale;
   }
 
   static getConfig(): Configuration {
@@ -81,6 +142,26 @@ class Configuration {
     this.max_d = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
     this.animationSpeed = configJson.animationSpeed;
     this.textureTone = configJson.textureTone;
+  
+
+    this.type1BoxRatio = configJson.type1BoxRatio || 0.5;
+    this.type2BoxRatio = configJson.type1BoxRatio || 0.5;
+    this.randomizeDelay = configJson.randomizeDelay || 4000;
+    this.PrintConfigData = configJson.PrintConfigData || false;
+    this.NearestNeighborDepth = configJson.NearestNeighborDepth || 1;
+    this.displayPoints = configJson.DefaultDisplayPoints || false;
+    this.ShowWozawskiEye = configJson.ShowWozawskiEye || false;
+    this.TopEyes = configJson.TopEyes || false;
+    this.RandomizeBounce = configJson.RandomizeBounce || false;
+    this.SynchronizeBounces = configJson.SynchronizeBounces || true;
+    this.BounceX = configJson.BounceX || false;
+    this.Animate = configJson.Animate || false;
+    this.GlobalMovement = configJson.GlobalMovement || false;
+    this.RandomizeMovment = configJson.RandomizeMovment || false;
+    this.RandomizeScale = configJson.RandomizeScale || false;
+
+    console.log("AFTER LOADING CONFIGJSON", this.GlobalMovement);
+
     this.boxes = [];
     for (let boxconfigArray of configJson.boxes) {
       let boxesArray = new Array<Box>();
@@ -101,6 +182,7 @@ class Configuration {
       }
       configBoxes.push(configBoxesArray);
     }
+
     let output: JSONConfiguration = {
       width: this.w,
       height: this.h,
@@ -112,7 +194,22 @@ class Configuration {
       dy: this.dy,
       animationSpeed: this.animationSpeed,
       textureTone: this.textureTone,
-      boxes: configBoxes
+      boxes: configBoxes,
+      type1BoxRatio: this.type1BoxRatio,
+      type2BoxRatio: this.type2BoxRatio,
+      randomizeDelay: this.randomizeDelay,
+      PrintConfigData: this.PrintConfigData,
+      NearestNeighborDepth: this.NearestNeighborDepth,
+      displayPoints: this.displayPoints,
+      ShowWozawskiEye: this.ShowWozawskiEye,
+      TopEyes: this.TopEyes,
+      RandomizeBounce: this.RandomizeBounce,
+      SynchronizeBounces: this.SynchronizeBounces,
+      BounceX: this.BounceX,
+      Animate: this.Animate,
+      GlobalMovement: this.GlobalMovement,
+      RandomizeMovment: this.RandomizeMovment,
+      RandomizeScale: this.RandomizeScale,
     }
 
     if (PrintConfigData) {

@@ -2,7 +2,14 @@
       "pink": "#a1665e",
       "blackandwhite": "#444444",
       "white": "#ffffff",
-      "yellowishgrey": "#ffcdb2"
+      "yellowishgrey": "#ffcdb2",
+      "brown": "#dfa26f",
+      "red": "#d81818",
+      "caucasian": "#ffad60",
+      "rose": "#ecbcb4",
+      "lightpink": "#a1665e",
+      "darkpink": "#503335",
+      "verylightpink": "#ecbcb4"
     }
       // textureTone = "#693f3a";
     // textureTone = "#8E4B32";

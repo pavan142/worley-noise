@@ -2,7 +2,7 @@ import { Point } from "./point";
 import { BoxConfig } from "./types";
 import { config } from "./config";
 import { ctx } from "./globals";
-import { TwoCrossTwoEyes } from "./constants";
+import { TopEyes } from "./constants";
 
 export class Box {
   i: number;
@@ -21,9 +21,11 @@ export class Box {
     this.y = j * config.dy;
   
 
-    if (TwoCrossTwoEyes && config.county == 2 && config.county == 2) {
+    if (TopEyes) {
       this.hasEye = (j == 0)
     }
+
+    // this.hasEye = Math.random() < 0.3;
     // This assignment makes x flow right and y flow down in the boxes matrix
     // this.x = j * config.dx;
     // this.y = i * config.dy;

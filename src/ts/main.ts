@@ -16,11 +16,30 @@ import {
   randomizeDelay,
   NearestNeighborDepth,
   DefaultDisplayPoints,
-  ShowWozawskiEye
+  ShowWozawskiEye,
+  Animate
 } from "./constants";
 
 var displayPoints = DefaultDisplayPoints;
 var showeyes = ShowWozawskiEye;
+
+let max_dist = config.max_d;
+function getOpacity(x, max, hasEye) {
+  // max_dist = Math.max(max, max_dist)
+  // max = max_dist;
+  let opacity = x / max;
+  opacity = 1 - opacity;
+  opacity = Math.pow(opacity, 2.4);
+  if (hasEye) {
+    if (opacity > 0.97)
+      opacity = 1 - opacity * 0.4
+    else if (opacity > 0.92)
+      opacity = 1 - opacity * 0.3
+    else if (opacity > 0.87)
+      opacity = 1 - opacity * 0.2
+  }
+  return opacity;
+}
 
 function RenderWorleyNoise(inputColor: string = HumanSkinTones.blackandwhite) {
   let rgb = hexToRgb(inputColor);
@@ -28,21 +47,9 @@ function RenderWorleyNoise(inputColor: string = HumanSkinTones.blackandwhite) {
   var data = imageData.data;
   for (var i = 0; i < data.length; i = i + 4) {
     let point = get2dCoords(i);
-    const {dist, box} = getNearestDistance(point, config.boxes);
-    let opacity = (dist / (config.max_d));
-    opacity = 1 - opacity;
-    opacity = Math.pow(opacity, 1.7);
-    // if (point.y < (config.h / 2)) {
-    if (showeyes || box.hasEye) {
-      if (opacity > 0.97)
-        opacity = 1 - opacity * 0.5
-      else if (opacity > 0.90)
-        opacity = 1 - opacity * 0.3
-      else if (opacity > 0.85)
-        opacity = 1 - opacity * 0.2
-    }
-    // }
-
+    const { dist, box } = getNearestDistance(point, config.boxes);
+    let hasEye = showeyes || box.hasEye;
+    let opacity = getOpacity(dist, config.max_d, hasEye)
     data[i + 0] = rgb.r * opacity;
     data[i + 1] = rgb.g * opacity;
     data[i + 2] = rgb.b * opacity;
@@ -67,16 +74,25 @@ function getNearestDistance(point: coords, boxes: Array<Array<Box>>): {
   let data = getCurrentBox(point, boxes);
   let box = data.box
   let bounding_boxes = new Array<Box>();
-  let start = -NearestNeighborDepth;
-  let end = +NearestNeighborDepth;
-  for (let shiftx = start; shiftx <= end; shiftx++) {
-    for (let shifty = start; shifty <= end; shifty++) {
-      let i = data.i + shiftx;
-      let j = data.j + shifty;
-      if (i > -1 && i < config.countx && j > -1 && j < config.county)
-        bounding_boxes.push(boxes[i][j]);
+  if (NearestNeighborDepth == -1) {
+    for (let boxArray of boxes) {
+      for (let box of boxArray) {
+        bounding_boxes.push(box);
+      }
+    }
+  } else {
+    let start = -NearestNeighborDepth;
+    let end = +NearestNeighborDepth;
+    for (let shiftx = start; shiftx <= end; shiftx++) {
+      for (let shifty = start; shifty <= end; shifty++) {
+        let i = data.i + shiftx;
+        let j = data.j + shifty;
+        if (i > -1 && i < config.countx && j > -1 && j < config.county)
+          bounding_boxes.push(boxes[i][j]);
+      }
     }
   }
+
   let min = 2 * config.max_d;
   let minBox = data.box;
   for (let box of bounding_boxes) {
@@ -130,8 +146,8 @@ function renderPoints(boxes: Array<any>) {
 
 function linearTo2d(i, rows, cols) {
   return {
-    x: Math.floor(i % cols),
-    y: Math.floor(i / cols)
+    y: Math.floor(i % cols),
+    x: Math.floor(i / cols)
   }
 }
 
@@ -142,18 +158,21 @@ function getBoxLinear(i): Box {
 }
 
 function init() {
-  config.boxes = generateBoxes();
   clearScreen();
-  config.generateConfig();
+
   if (LoadConfigFromFile) {
+    console.log("loading from config file")
     config.updateFromConfig(configFile)
+  } else {
+    config.boxes = generateBoxes();
+    config.generateConfig();
   }
 
   const { type1Boxes, type2Boxes } = generateRandomTypeBoxes();
   animate(type1Boxes, type2Boxes);
   setInterval(() => {
     generateRandom();
-  }, randomizeDelay)
+  }, config.randomizeDelay)
 }
 
 function generateRandomTypeBoxes(): {
@@ -163,10 +182,10 @@ function generateRandomTypeBoxes(): {
   let type1Boxes = new Array<Box>();
   let type2Boxes = new Array<Box>();
   if (config.county == 2 && config.county == 2) {
-    type1Boxes.push(getBoxLinear(2));
+    type1Boxes.push(getBoxLinear(1));
     type1Boxes.push(getBoxLinear(3));
     type2Boxes.push(getBoxLinear(0));
-    type2Boxes.push(getBoxLinear(1));
+    type2Boxes.push(getBoxLinear(2));
     return {
       type1Boxes,
       type2Boxes
@@ -191,7 +210,7 @@ function generateRandomTypeBoxes(): {
 
 function clearScreen() {
   ctx.clearRect(0, 0, config.w, config.h);
-  ctx.fillStyle = "#e5989bff"
+  ctx.fillStyle = config.textureTone;
   ctx.fillRect(0, 0, config.w, config.h);
 }
 
@@ -204,10 +223,12 @@ function RandomizePoints() {
 
 function animate(type1Boxes: Array<Box>, type2Boxes: Array<Box>) {
   clearScreen();
-  for (let box of type1Boxes)
-    box.point.animate();
-  for (let box of type2Boxes)
-    box.point.animate2();
+  if (Animate) {
+    for (let box of type1Boxes)
+      box.point.animate();
+    for (let box of type2Boxes)
+      box.point.animate2();
+  }
   if (displayPoints)
     renderPoints(config.boxes);
   else
